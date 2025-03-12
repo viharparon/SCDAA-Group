@@ -64,8 +64,6 @@ def is_controllable(A, B):
 
 
 # Check controllability
-controllable = is_controllable(A, B)
-print("The system is controllable:" if controllable else "The system is not controllable.")
 
 # Example usage
 time_grid = np.linspace(0, 10, 1000)
@@ -78,5 +76,8 @@ x0 = np.array([1.0, 0.0])
 
 lqr = LQRStochasticControl(time_grid, T, A, B, Q, R, x0)
 P = lqr.solve_riccati()
+
+controllable = is_controllable(A, B)
+print("The system is controllable:" if controllable else "The system is not controllable.")
 
 print(P)
