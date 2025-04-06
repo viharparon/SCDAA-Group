@@ -11,6 +11,8 @@ The code is set up so that after each question is computed, plots will be displa
 
 *Note*: The code for question 1 is scaled down to run for fewer time steps and sample counts since it otherwise takes a long time. We have included the plots of the results for the full required range in the report. 
 
+In case you are having issues with the computation, we have also provided a Jupyter notebook with the results of our test executions.
+
 The code is set up to run with the following parameters due to how long it takes to execute. You can modify these if you go into the final function of each question's module:
 - Q1: time_steps = 1500, sample_counts = [2 * 4**i for i in range(5)] & num_samples = 1500,  time_steps_list = [2\**i for i in range(1, 10)]
 - Q3: Time grid size 100, hidden_size=512, learning_rate=1e-3, num_epochs=500, batch_size=64, eval_interval=20
