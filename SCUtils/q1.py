@@ -413,7 +413,7 @@ def run_monte_carlo_comparison(lqr: LQR, x0: torch.Tensor) -> None:
     """
     # 1. Test varying time steps with fixed number of samples
     num_samples = 1500 # Should be 10k
-    time_steps_list = [2**i for i in range(1, 12)] # Should be 12
+    time_steps_list = [2**i for i in range(1, 10)] # Should be 12
     
     # Compute true value function at t=0, x=x0
     t0 = torch.zeros(x0.shape[0], dtype=torch.float64)
@@ -464,7 +464,7 @@ def run_monte_carlo_comparison(lqr: LQR, x0: torch.Tensor) -> None:
     
     # 2. Test varying number of samples with fixed number of time steps
     num_steps = 1500  # Large number for accuracy should be 10k
-    sample_counts = [2 * 4**i for i in range(6)] # Should be 6
+    sample_counts = [2 * 4**i for i in range(5)] # Should be 6
     
     # Arrays to store results for both schemes
     explicit_sample_errors = []

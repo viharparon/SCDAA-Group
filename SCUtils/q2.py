@@ -397,7 +397,7 @@ def simulate_comparison(lqr: LQR, soft_lqr: SoftLQR, x0_list: list, num_steps: i
         ax2 = axes[i, 1] if len(x0_list) > 1 else axes[1]
         ax2.plot(t_grid.numpy(), running_costs_lqr.numpy(), 'b-', label='Standard LQR Cost')
         ax2.plot(t_grid.numpy(), running_costs_soft.numpy(), 'r-', label='Soft LQR Cost')
-        ax2.set_title(f'Cost Over Time from Initial State {x0}')
+        ax2.set_title(f'(SoftLQR) Cost Over Time from Initial State {x0}')
         ax2.set_xlabel('Time')
         ax2.set_ylabel('Cost')
         ax2.grid(True)
