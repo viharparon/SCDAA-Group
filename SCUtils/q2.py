@@ -250,7 +250,7 @@ def simulate_comparison(lqr: LQR, soft_lqr: SoftLQR, x0_list: list, num_steps: i
     R = lqr.R.to(torch.float64)
     
     # Initialize plot
-    fig, axes = plt.subplots(len(x0_list), 2, figsize=(16, 4*len(x0_list)))
+    fig, axes = plt.subplots(len(x0_list), 2, figsize=(16, 4*len(x0_list)), squeeze=False)
     
     for i, x0 in enumerate(x0_list):
         # Convert initial state to tensor with explicit dtype

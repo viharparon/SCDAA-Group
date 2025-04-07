@@ -402,6 +402,105 @@ def simulate_sde_implicit(lqr: LQR, x0: torch.Tensor, num_steps: int, num_sample
     
     return X, costs
 
+
+def compare_scheme_trajectories(lqr: LQR, x0: torch.Tensor) -> None:
+    """
+    Compare and plot trajectories from explicit and implicit schemes.
+    
+    Args:
+        lqr: LQR instance
+        x0: Initial states to test
+    """
+    # Set simulation parameters
+    num_steps = 100
+    num_samples = 1  # Just one sample for visualization
+    
+    # Simulate trajectories using both schemes with the same noise
+    # Generate Brownian motion for consistency between schemes
+    dt = lqr.T / num_steps
+    dW = torch.randn((num_samples, x0.shape[0], num_steps, lqr.sigma.shape[1]), 
+                    dtype=torch.float64) * np.sqrt(dt)
+    
+    # Run simulations with shared noise
+    X_explicit, _ = simulate_sde_explicit(lqr, x0, num_steps, num_samples, fixed_noise=dW)
+    X_implicit, _ = simulate_sde_implicit(lqr, x0, num_steps, num_samples, fixed_noise=dW)
+    
+    # Plot trajectories for each initial state
+    fig, axes = plt.subplots(1, x0.shape[0], figsize=(15, 5))
+    
+    for i in range(x0.shape[0]):
+        ax = axes[i] if x0.shape[0] > 1 else axes
+        
+        # Extract trajectories for this initial state
+        traj_explicit = X_explicit[0, i].cpu().numpy()  # First sample, ith initial state
+        traj_implicit = X_implicit[0, i].cpu().numpy()
+        
+        # Plot trajectories
+        ax.plot(traj_explicit[:, 0], traj_explicit[:, 1], 'b-', label='Explicit Scheme')
+        ax.plot(traj_implicit[:, 0], traj_implicit[:, 1], 'r-', label='Implicit Scheme')
+        ax.scatter([x0[i, 0]], [x0[i, 1]], c='g', s=100, marker='o', label='Initial State')
+        
+        ax.set_title(f'Trajectories from Initial State {x0[i].tolist()}')
+        ax.set_xlabel('X1')
+        ax.set_ylabel('X2')
+        ax.grid(True)
+        ax.legend()
+    
+    plt.tight_layout()
+    plt.draw()
+
+def main_q1():
+    # Set the problem matrices as specified in Figure 1
+    H = torch.tensor([[1.0, 1.0], [0.0, 1.0]], dtype=torch.float64) * 0.5
+    M = torch.tensor([[1.0, 1.0], [0.0, 1.0]], dtype=torch.float64)
+    sigma = torch.eye(2, dtype=torch.float64) * 0.5
+    C = torch.tensor([[1.0, 0.1], [0.1, 1.0]], dtype=torch.float64) * 1.0
+    D = torch.tensor([[1.0, 0.1], [0.1, 1.0]], dtype=torch.float64) * 0.1
+    R = torch.tensor([[1.0, 0.3], [0.3, 1.0]], dtype=torch.float64) * 10.0
+    
+    # Set the terminal time and time grid
+    T = 0.5
+    grid_size = 4000
+    time_grid = torch.linspace(0, T, grid_size, dtype=torch.float64)
+    
+    # Create LQR instance
+    lqr = LQR(H, M, sigma, C, D, R, T, time_grid)
+    
+    # Solve Ricatti ODE
+    lqr.solve_ricatti()
+    
+    # Print S matrices at key time points
+    print("S(0):\n", lqr.S_grid[0])
+    print("S(T/2):\n", lqr.S_grid[grid_size//2])
+    print("S(T):\n", lqr.S_grid[-1])
+    
+    # Test points
+    x0 = torch.tensor([
+        [1.0, 1.0],
+        [2.0, 2.0],
+        [-5.0, 5.0]
+    ], dtype=torch.float64)
+    
+    # Compute value function at test points
+    t0 = torch.zeros(x0.shape[0], dtype=torch.float64)
+    v0 = lqr.value_function(t0, x0)
+    print("\nValue function at t=0:")
+    for i in range(x0.shape[0]):
+        print(f"v(0, {x0[i].tolist()}) = {v0[i].item():.6f}")
+    
+    # Get the optimal control for the test points
+    u0 = lqr.optimal_control(t0, x0)
+    print("\nOptimal control at t=0:")
+    for i in range(x0.shape[0]):
+        print(f"u(0, {x0[i].tolist()}) = {u0[i].tolist()}")
+    
+    # Run Monte Carlo comparison for both schemes
+    run_monte_carlo_comparison(lqr, x0)
+    
+    # Additionally, compare trajectories from both schemes
+    compare_scheme_trajectories(lqr, x0)
+
+
 def run_monte_carlo_comparison(lqr: LQR, x0: torch.Tensor) -> None:
 
     """
@@ -504,101 +603,4 @@ def run_monte_carlo_comparison(lqr: LQR, x0: torch.Tensor) -> None:
     plt.title('Convergence with Varying Sample Counts - Comparison of Schemes')
     plt.grid(True)
     plt.legend()
-    plt.draw()
-
-def main_q1():
-    # Set the problem matrices as specified in Figure 1
-    H = torch.tensor([[1.0, 1.0], [0.0, 1.0]], dtype=torch.float64) * 0.5
-    M = torch.tensor([[1.0, 1.0], [0.0, 1.0]], dtype=torch.float64)
-    sigma = torch.eye(2, dtype=torch.float64) * 0.5
-    C = torch.tensor([[1.0, 0.1], [0.1, 1.0]], dtype=torch.float64) * 1.0
-    D = torch.tensor([[1.0, 0.1], [0.1, 1.0]], dtype=torch.float64) * 0.1
-    R = torch.tensor([[1.0, 0.3], [0.3, 1.0]], dtype=torch.float64) * 10.0
-    
-    # Set the terminal time and time grid
-    T = 0.5
-    grid_size = 4000
-    time_grid = torch.linspace(0, T, grid_size, dtype=torch.float64)
-    
-    # Create LQR instance
-    lqr = LQR(H, M, sigma, C, D, R, T, time_grid)
-    
-    # Solve Ricatti ODE
-    lqr.solve_ricatti()
-    
-    # Print S matrices at key time points
-    print("S(0):\n", lqr.S_grid[0])
-    print("S(T/2):\n", lqr.S_grid[grid_size//2])
-    print("S(T):\n", lqr.S_grid[-1])
-    
-    # Test points
-    x0 = torch.tensor([
-        [1.0, 1.0],
-        [2.0, 2.0],
-        [-5.0, 5.0]
-    ], dtype=torch.float64)
-    
-    # Compute value function at test points
-    t0 = torch.zeros(x0.shape[0], dtype=torch.float64)
-    v0 = lqr.value_function(t0, x0)
-    print("\nValue function at t=0:")
-    for i in range(x0.shape[0]):
-        print(f"v(0, {x0[i].tolist()}) = {v0[i].item():.6f}")
-    
-    # Get the optimal control for the test points
-    u0 = lqr.optimal_control(t0, x0)
-    print("\nOptimal control at t=0:")
-    for i in range(x0.shape[0]):
-        print(f"u(0, {x0[i].tolist()}) = {u0[i].tolist()}")
-    
-    # Run Monte Carlo comparison for both schemes
-    run_monte_carlo_comparison(lqr, x0)
-    
-    # Additionally, compare trajectories from both schemes
-    compare_scheme_trajectories(lqr, x0)
-
-def compare_scheme_trajectories(lqr: LQR, x0: torch.Tensor) -> None:
-    """
-    Compare and plot trajectories from explicit and implicit schemes.
-    
-    Args:
-        lqr: LQR instance
-        x0: Initial states to test
-    """
-    # Set simulation parameters
-    num_steps = 100
-    num_samples = 1  # Just one sample for visualization
-    
-    # Simulate trajectories using both schemes with the same noise
-    # Generate Brownian motion for consistency between schemes
-    dt = lqr.T / num_steps
-    dW = torch.randn((num_samples, x0.shape[0], num_steps, lqr.sigma.shape[1]), 
-                    dtype=torch.float64) * np.sqrt(dt)
-    
-    # Run simulations with shared noise
-    X_explicit, _ = simulate_sde_explicit(lqr, x0, num_steps, num_samples, fixed_noise=dW)
-    X_implicit, _ = simulate_sde_implicit(lqr, x0, num_steps, num_samples, fixed_noise=dW)
-    
-    # Plot trajectories for each initial state
-    fig, axes = plt.subplots(1, x0.shape[0], figsize=(15, 5))
-    
-    for i in range(x0.shape[0]):
-        ax = axes[i] if x0.shape[0] > 1 else axes
-        
-        # Extract trajectories for this initial state
-        traj_explicit = X_explicit[0, i].cpu().numpy()  # First sample, ith initial state
-        traj_implicit = X_implicit[0, i].cpu().numpy()
-        
-        # Plot trajectories
-        ax.plot(traj_explicit[:, 0], traj_explicit[:, 1], 'b-', label='Explicit Scheme')
-        ax.plot(traj_implicit[:, 0], traj_implicit[:, 1], 'r-', label='Implicit Scheme')
-        ax.scatter([x0[i, 0]], [x0[i, 1]], c='g', s=100, marker='o', label='Initial State')
-        
-        ax.set_title(f'Trajectories from Initial State {x0[i].tolist()}')
-        ax.set_xlabel('X1')
-        ax.set_ylabel('X2')
-        ax.grid(True)
-        ax.legend()
-    
-    plt.tight_layout()
     plt.draw()
