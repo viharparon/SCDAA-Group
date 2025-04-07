@@ -17,4 +17,4 @@ The code is set up to run with the following parameters due to how long it takes
 - Q1: time_steps = 1500, sample_counts = [2 * 4**i for i in range(5)] & num_samples = 1500,  time_steps_list = [2\**i for i in range(1, 10)]
 - Q3: Time grid size 100, hidden_size=512, learning_rate=1e-3, num_epochs=500, batch_size=64, eval_interval=20
 - Q4: num_epochs=500, batch_size=256, eval_interval=25, hidden_size=256, learning_rate=1e-3
-- Q5: num_epochs=500, batch_size=16, eval_interval=25 actor_hidden_size=256, critic_hidden_size=512, actor_lr=1e-4, critic_lr=1e-3
+- Q5: num_epochs=500, batch_size=256, eval_interval=25, actor_hidden_size=256, critic_hidden_size=512, actor_lr=1e-4, critic_lr=1e-3
